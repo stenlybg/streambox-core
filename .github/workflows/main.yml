@@ -16,8 +16,11 @@ jobs:
       - name: Download Apktool
         run: wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
           
-      - name: Build APK with Apktool
-        run: java -jar apktool.jar b . -o streambox-unsigned.apk
+      - name: Locate and Build APK
+        run: |
+          APP_DIR=$(dirname $(find . -name "apktool.yml" | head -n 1))
+          echo "Found apktool.yml in directory: $APP_DIR"
+          java -jar apktool.jar b "$APP_DIR" -o streambox-unsigned.apk
         
       - name: Generate Keystore and Sign APK
         run: |
