@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Repackage Decompiled APK
 on:
   workflow_dispatch:
 jobs:
@@ -7,22 +7,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: set up JDK 17
+      - name: Set up Java
         uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-disabled: true
+      - name: Download Apktool
+        run: wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.9.3.jar -O apktool.jar
           
-      - name: Build with Gradle
-        run: gradle assembleDebug
+      - name: Build APK with Apktool
+        run: java -jar apktool.jar b . -o streambox-unsigned.apk
         
-      - name: Upload APK
+      - name: Generate Keystore and Sign APK
+        run: |
+          sudo apt-get update
+          sudo apt-get install apksigner -y
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          apksigner sign --ks debug.keystore --ks-pass pass:android --key-pass pass:android --out streambox-signed.apk streambox-unsigned.apk
+          
+      - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: streambox-ready
+          path: streambox-signed.apk
